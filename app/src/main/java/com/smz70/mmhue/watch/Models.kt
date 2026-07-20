@@ -24,6 +24,24 @@ data class HomeState(
 
     /** True when every light the bridge knows about is off. */
     val allOff: Boolean get() = onCount == 0
+
+    /**
+     * Apply [edit] to one light, force it on, and recompute the room and total
+     * on-counts. Used for optimistic colour/warmth changes, which implicitly turn
+     * a light on because you cannot show a colour on a dark bulb.
+     */
+    fun withLightOn(lightId: String, edit: (Light) -> Light): HomeState {
+        val target = light(lightId) ?: return this
+        val newLights = lights.map { if (it.id == lightId) edit(it).copy(on = true) else it }
+        return copy(
+            lights = newLights,
+            rooms = rooms.map { room ->
+                if (room.id == target.roomId) room.copy(onCount = newLights.count { it.roomId == room.id && it.on })
+                else room
+            },
+            onCount = newLights.count { it.on },
+        )
+    }
 }
 
 @Serializable
@@ -51,6 +69,9 @@ data class Light(
     /** 0-1. */
     val saturation: Float? = null,
     @SerialName("supports_color") val supportsColor: Boolean = false,
+    /** Mirek (153 cool - 500 warm). Null when the light is showing a colour, not white. */
+    @SerialName("color_temp") val colorTemp: Int? = null,
+    @SerialName("supports_color_temp") val supportsColorTemp: Boolean = false,
 )
 
 /**
@@ -70,47 +91,51 @@ object Brightness {
 }
 
 /**
- * A named colour the watch can send: a hue in degrees and a saturation.
+ * White colour temperature, in mirek.
  *
- * mmhue's set_color takes hue 0-360 and saturation 0-1 and converts to CIE xy on
- * the Pi, so the watch only has to name a point in HSV. A picker wheel is a poor
- * fit for a fingertip on a round screen, so this is a fixed palette of tappable
- * swatches instead -- the same shape the web panel uses.
+ * mmhue clamps to 153 (cool daylight) - 500 (warm candle); the watch keeps the
+ * same range. Lower mirek is cooler/bluer, higher is warmer/oranger -- the
+ * opposite direction to Kelvin, which is why the dial converts for display.
  */
-data class Swatch(val label: String, val hue: Float, val saturation: Float)
+object ColorTemp {
+    const val MIN = 153   // coolest, ~6500K
+    const val MAX = 500   // warmest, ~2000K
+    const val STEP = 10
+    const val DEFAULT = 320
 
-object Palette {
-    /** Vivid ring, saturation 1.0. */
-    val vivid: List<Swatch> = listOf(
-        Swatch("Red", 0f, 1f),
-        Swatch("Orange", 30f, 1f),
-        Swatch("Yellow", 55f, 1f),
-        Swatch("Green", 120f, 1f),
-        Swatch("Teal", 175f, 1f),
-        Swatch("Cyan", 195f, 1f),
-        Swatch("Blue", 225f, 1f),
-        Swatch("Violet", 265f, 1f),
-        Swatch("Magenta", 300f, 1f),
-        Swatch("Pink", 330f, 1f),
-    )
+    fun clamp(mirek: Int): Int = mirek.coerceIn(MIN, MAX)
 
-    /** Soft ring, same hues at lower saturation -- the pastels the panel author
-     *  added saturation control specifically to reach. */
-    val soft: List<Swatch> = listOf(
-        Swatch("Peach", 25f, 0.45f),
-        Swatch("Lime", 90f, 0.45f),
-        Swatch("Mint", 150f, 0.4f),
-        Swatch("Sky", 205f, 0.45f),
-        Swatch("Lavender", 260f, 0.4f),
-        Swatch("Rose", 335f, 0.4f),
-    )
+    /** Mirek -> Kelvin, rounded to the nearest 100 for a stable readout. */
+    fun kelvin(mirek: Int): Int = (Math.round(1_000_000.0 / clamp(mirek) / 100.0) * 100).toInt()
 
-    /** True when this light is roughly showing the given swatch, so the picker
-     *  can mark the current one. Hue is circular, hence the wrap-around distance. */
-    fun Light.matches(swatch: Swatch): Boolean {
-        val h = hue ?: return false
-        val s = saturation ?: return false
-        val dh = kotlin.math.abs(h - swatch.hue).let { minOf(it, 360f - it) }
-        return dh <= 8f && kotlin.math.abs(s - swatch.saturation) <= 0.12f
+    /** 0 at the coolest end, 1 at the warmest -- for the dial's progress ring. */
+    fun warmth(mirek: Int): Float = (clamp(mirek) - MIN).toFloat() / (MAX - MIN)
+
+    fun label(mirek: Int): String = when {
+        mirek <= 200 -> "Daylight"
+        mirek <= 270 -> "Cool white"
+        mirek <= 350 -> "Neutral"
+        mirek <= 430 -> "Warm white"
+        else -> "Candle"
+    }
+}
+
+/** Hue wheel, in degrees. Saturation is fixed at full for the crown dial. */
+object Hue {
+    const val STEP = 8f
+    const val SATURATION = 1f
+
+    fun wrap(deg: Float): Float = ((deg % 360f) + 360f) % 360f
+
+    fun name(deg: Float): String = when (wrap(deg).toInt()) {
+        in 0..14, in 345..360 -> "Red"
+        in 15..44 -> "Orange"
+        in 45..69 -> "Yellow"
+        in 70..159 -> "Green"
+        in 160..199 -> "Teal"
+        in 200..254 -> "Blue"
+        in 255..289 -> "Violet"
+        in 290..324 -> "Magenta"
+        else -> "Pink"
     }
 }

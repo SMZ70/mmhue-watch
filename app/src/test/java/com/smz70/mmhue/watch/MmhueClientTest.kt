@@ -139,6 +139,21 @@ class MmhueClientTest {
         assertTrue(l1.supportsColor)
         assertEquals(21.2f, l1.hue!!, 0.01f)
         assertEquals(0.9f, l1.saturation!!, 0.01f)
+        assertTrue(l1.supportsColorTemp)
+        assertEquals(366, l1.colorTemp)
+    }
+
+    @Test
+    fun `color temp is clamped to the panel range before it is sent`() = runTest {
+        repeat(3) { server.enqueue(MockResponse().setBody("{}")) }
+
+        client.setColorTemp("l1", 300)
+        client.setColorTemp("l1", 50)    // below cool bound -> 153
+        client.setColorTemp("l1", 999)   // above warm bound -> 500
+
+        assertEquals("/api/lights/l1/ct/300", server.takeRequest().path)
+        assertEquals("/api/lights/l1/ct/153", server.takeRequest().path)
+        assertEquals("/api/lights/l1/ct/500", server.takeRequest().path)
     }
 
     @Test

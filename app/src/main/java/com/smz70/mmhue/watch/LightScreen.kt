@@ -46,6 +46,7 @@ fun LightScreen(
     onToggle: () -> Unit,
     onPreviewBrightness: (Int) -> Unit,
     onCommitBrightness: (Int) -> Unit,
+    onOpenWarmth: () -> Unit,
     onOpenColor: () -> Unit,
 ) {
     val light = ui.home?.light(lightId)
@@ -137,6 +138,19 @@ fun LightScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
+                // Warmth first: shades of white are the common ask; colour is
+                // the occasional one.
+                if (light.supportsColorTemp) {
+                    Chip(
+                        label = { Text("Warmth") },
+                        onClick = onOpenWarmth,
+                        colors = ChipDefaults.secondaryChipColors(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                    )
+                }
+
                 if (light.supportsColor) {
                     Chip(
                         label = { Text("Colour") },
@@ -152,11 +166,7 @@ fun LightScreen(
     }
 }
 
-/**
- * Roughly one brightness step per crown detent on a Pixel Watch. Tuned by feel:
- * too small and a flick slams the light to 100, too large and it takes a full
- * revolution to cross the useful range.
- */
-private const val PIXELS_PER_STEP = 60f
+// Crown sensitivity is shared with the warmth and colour dials via
+// CrownDial.PIXELS_PER_STEP, so all four controls feel identical under the finger.
 private const val COMMIT_DELAY_MS = 250L
 private const val NO_PENDING = -1

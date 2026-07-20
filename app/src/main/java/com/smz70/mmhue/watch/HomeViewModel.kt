@@ -121,33 +121,33 @@ class HomeViewModel(
 
     /**
      * Setting a colour turns the light on (you cannot see a colour that is off),
-     * so reflect that optimistically too, matching what the bridge will do.
+     * so reflect that optimistically too, matching what the bridge will do. A
+     * colour also clears the white colour-temp, and vice-versa -- a Hue light is
+     * in one mode or the other, never both.
      */
     fun setColor(lightId: String, hue: Float, sat: Float) = optimistic(
-        mutate = { home ->
-            val lights = home.lights.map {
-                if (it.id == lightId) it.copy(hue = hue, saturation = sat, on = true) else it
-            }
-            home.copy(
-                lights = lights,
-                rooms = home.rooms.map { room ->
-                    val target = home.light(lightId)
-                    if (room.id == target?.roomId) room.copy(onCount = lights.count { it.roomId == room.id && it.on })
-                    else room
-                },
-                onCount = lights.count { it.on },
-            )
-        },
+        mutate = { home -> home.withLightOn(lightId) { it.copy(hue = hue, saturation = sat, colorTemp = null) } },
         call = { client.setColor(lightId, hue, sat) },
     )
 
+    fun setColorTemp(lightId: String, mirek: Int) = optimistic(
+        mutate = { home -> home.withLightOn(lightId) { it.copy(colorTemp = ColorTemp.clamp(mirek), hue = null) } },
+        call = { client.setColorTemp(lightId, mirek) },
+    )
+
+    /** Local-only updates for live crown feedback before the value settles. */
+    fun previewColorTemp(lightId: String, mirek: Int) = patchLight(lightId) { it.copy(colorTemp = ColorTemp.clamp(mirek)) }
+
+    fun previewHue(lightId: String, hue: Float) = patchLight(lightId) { it.copy(hue = Hue.wrap(hue), saturation = Hue.SATURATION) }
+
     /** Local-only brightness update, for live crown feedback before the value settles. */
-    fun previewBrightness(lightId: String, pct: Int) {
+    fun previewBrightness(lightId: String, pct: Int) = patchLight(lightId) { it.copy(brightness = Brightness.clamp(pct)) }
+
+    /** Apply a local-only edit to one light, without touching the network. */
+    private fun patchLight(lightId: String, edit: (Light) -> Light) {
         _ui.update { state ->
             val home = state.home ?: return@update state
-            state.copy(home = home.copy(lights = home.lights.map {
-                if (it.id == lightId) it.copy(brightness = Brightness.clamp(pct)) else it
-            }))
+            state.copy(home = home.copy(lights = home.lights.map { if (it.id == lightId) edit(it) else it }))
         }
     }
 

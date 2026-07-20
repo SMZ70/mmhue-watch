@@ -47,6 +47,10 @@ class MmhueClient(
         post("/api/lights/$lightId/color/$h/$s")
     }
 
+    /** mirek: 153 (cool) - 500 (warm). Matches mmhue's /ct/{mirek} endpoint. */
+    suspend fun setColorTemp(lightId: String, mirek: Int) =
+        post("/api/lights/$lightId/ct/${ColorTemp.clamp(mirek)}")
+
     private fun Boolean.onOff() = if (this) "on" else "off"
 
     private suspend fun get(path: String): String = withContext(Dispatchers.IO) {
