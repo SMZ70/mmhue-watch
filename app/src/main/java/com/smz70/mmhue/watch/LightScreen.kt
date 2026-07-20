@@ -46,6 +46,7 @@ fun LightScreen(
     onToggle: () -> Unit,
     onPreviewBrightness: (Int) -> Unit,
     onCommitBrightness: (Int) -> Unit,
+    onOpenColor: () -> Unit,
 ) {
     val light = ui.home?.light(lightId)
     val focusRequester = remember { FocusRequester() }
@@ -135,6 +136,17 @@ fun LightScreen(
                     colors = if (light.on) ChipDefaults.secondaryChipColors() else ChipDefaults.primaryChipColors(),
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                if (light.supportsColor) {
+                    Chip(
+                        label = { Text("Colour") },
+                        onClick = onOpenColor,
+                        colors = ChipDefaults.secondaryChipColors(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                    )
+                }
             }
         }
     }

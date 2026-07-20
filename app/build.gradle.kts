@@ -26,7 +26,12 @@ android {
             isMinifyEnabled = false
         }
         release {
-            isMinifyEnabled = false
+            // Minified because the watch installs over ADB Wi-Fi and the
+            // unminified build is slow enough to time out mid-transfer.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Debug-signed on purpose: this is sideloaded, never published.
             signingConfig = signingConfigs.getByName("debug")
         }
     }

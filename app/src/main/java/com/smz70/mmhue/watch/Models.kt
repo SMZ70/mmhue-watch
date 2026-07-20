@@ -46,6 +46,11 @@ data class Light(
     val on: Boolean = false,
     /** Percent, 0-100. The bridge reports the last set value even while off. */
     val brightness: Int = 0,
+    /** Degrees, 0-360. Null when the light has never been given a colour. */
+    val hue: Float? = null,
+    /** 0-1. */
+    val saturation: Float? = null,
+    @SerialName("supports_color") val supportsColor: Boolean = false,
 )
 
 /**
@@ -62,4 +67,50 @@ object Brightness {
 
     /** Snap to the nearest step so crown turns land on round numbers. */
     fun snap(pct: Int): Int = clamp((Math.round(pct / STEP.toFloat()) * STEP))
+}
+
+/**
+ * A named colour the watch can send: a hue in degrees and a saturation.
+ *
+ * mmhue's set_color takes hue 0-360 and saturation 0-1 and converts to CIE xy on
+ * the Pi, so the watch only has to name a point in HSV. A picker wheel is a poor
+ * fit for a fingertip on a round screen, so this is a fixed palette of tappable
+ * swatches instead -- the same shape the web panel uses.
+ */
+data class Swatch(val label: String, val hue: Float, val saturation: Float)
+
+object Palette {
+    /** Vivid ring, saturation 1.0. */
+    val vivid: List<Swatch> = listOf(
+        Swatch("Red", 0f, 1f),
+        Swatch("Orange", 30f, 1f),
+        Swatch("Yellow", 55f, 1f),
+        Swatch("Green", 120f, 1f),
+        Swatch("Teal", 175f, 1f),
+        Swatch("Cyan", 195f, 1f),
+        Swatch("Blue", 225f, 1f),
+        Swatch("Violet", 265f, 1f),
+        Swatch("Magenta", 300f, 1f),
+        Swatch("Pink", 330f, 1f),
+    )
+
+    /** Soft ring, same hues at lower saturation -- the pastels the panel author
+     *  added saturation control specifically to reach. */
+    val soft: List<Swatch> = listOf(
+        Swatch("Peach", 25f, 0.45f),
+        Swatch("Lime", 90f, 0.45f),
+        Swatch("Mint", 150f, 0.4f),
+        Swatch("Sky", 205f, 0.45f),
+        Swatch("Lavender", 260f, 0.4f),
+        Swatch("Rose", 335f, 0.4f),
+    )
+
+    /** True when this light is roughly showing the given swatch, so the picker
+     *  can mark the current one. Hue is circular, hence the wrap-around distance. */
+    fun Light.matches(swatch: Swatch): Boolean {
+        val h = hue ?: return false
+        val s = saturation ?: return false
+        val dh = kotlin.math.abs(h - swatch.hue).let { minOf(it, 360f - it) }
+        return dh <= 8f && kotlin.math.abs(s - swatch.saturation) <= 0.12f
+    }
 }

@@ -119,6 +119,28 @@ class HomeViewModel(
         call = { client.setBrightness(lightId, pct) },
     )
 
+    /**
+     * Setting a colour turns the light on (you cannot see a colour that is off),
+     * so reflect that optimistically too, matching what the bridge will do.
+     */
+    fun setColor(lightId: String, hue: Float, sat: Float) = optimistic(
+        mutate = { home ->
+            val lights = home.lights.map {
+                if (it.id == lightId) it.copy(hue = hue, saturation = sat, on = true) else it
+            }
+            home.copy(
+                lights = lights,
+                rooms = home.rooms.map { room ->
+                    val target = home.light(lightId)
+                    if (room.id == target?.roomId) room.copy(onCount = lights.count { it.roomId == room.id && it.on })
+                    else room
+                },
+                onCount = lights.count { it.on },
+            )
+        },
+        call = { client.setColor(lightId, hue, sat) },
+    )
+
     /** Local-only brightness update, for live crown feedback before the value settles. */
     fun previewBrightness(lightId: String, pct: Int) {
         _ui.update { state ->

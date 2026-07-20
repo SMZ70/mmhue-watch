@@ -117,6 +117,31 @@ class MmhueClientTest {
     }
 
     @Test
+    fun `color sends hue and saturation, wrapping and clamping`() = runTest {
+        repeat(3) { server.enqueue(MockResponse().setBody("{}")) }
+
+        client.setColor("l1", hue = 120f, sat = 1f)
+        client.setColor("l1", hue = 400f, sat = 1f)   // 400 wraps to 40
+        client.setColor("l1", hue = -30f, sat = 2f)   // -30 wraps to 330, sat clamps to 1
+
+        assertEquals("/api/lights/l1/color/120.0/1.0", server.takeRequest().path)
+        assertEquals("/api/lights/l1/color/40.0/1.0", server.takeRequest().path)
+        assertEquals("/api/lights/l1/color/330.0/1.0", server.takeRequest().path)
+    }
+
+    @Test
+    fun `parses color fields when present`() = runTest {
+        server.enqueue(MockResponse().setBody(sampleState))
+
+        val state = client.state()
+        val l1 = state.light("l1")!!
+
+        assertTrue(l1.supportsColor)
+        assertEquals(21.2f, l1.hue!!, 0.01f)
+        assertEquals(0.9f, l1.saturation!!, 0.01f)
+    }
+
+    @Test
     fun `room off uses the off verb`() = runTest {
         server.enqueue(MockResponse().setBody("{}"))
 

@@ -40,6 +40,13 @@ class MmhueClient(
     suspend fun setBrightness(lightId: String, pct: Int) =
         post("/api/lights/$lightId/brightness/${Brightness.clamp(pct)}")
 
+    /** hue: 0-360 degrees, sat: 0-1. Matches mmhue's /color/{hue}/{sat} endpoint. */
+    suspend fun setColor(lightId: String, hue: Float, sat: Float) {
+        val h = ((hue % 360f) + 360f) % 360f
+        val s = sat.coerceIn(0f, 1f)
+        post("/api/lights/$lightId/color/$h/$s")
+    }
+
     private fun Boolean.onOff() = if (this) "on" else "off"
 
     private suspend fun get(path: String): String = withContext(Dispatchers.IO) {
