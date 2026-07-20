@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The mmhue panel is plain HTTP on the home LAN. Cleartext is allowed for that
+  host only, not app-wide, so this app still refuses cleartext everywhere else.
+  If mmhue ever gets exposed beyond the LAN it needs TLS and auth, and this
+  file should shrink to nothing.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">mm.fritz.box</domain>
+        <domain includeSubdomains="false">192.168.178.50</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

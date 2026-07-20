@@ -1,0 +1,85 @@
+package com.smz70.mmhue.watch
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import androidx.wear.compose.navigation.SwipeDismissableNavHost
+import androidx.wear.compose.navigation.composable
+import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+
+class MainActivity : ComponentActivity() {
+
+    private val model: HomeViewModel by lazy {
+        androidx.lifecycle.ViewModelProvider(this)[HomeViewModel::class.java]
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent { MmhueApp() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        model.startPolling()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        model.stopPolling()
+    }
+}
+
+@Composable
+fun MmhueApp(model: HomeViewModel = viewModel()) {
+    val navController = rememberSwipeDismissableNavController()
+    val ui by model.ui.collectAsStateWithLifecycle()
+
+    SwipeDismissableNavHost(
+        navController = navController,
+        startDestination = "home",
+    ) {
+        composable("home") {
+            HomeScreen(
+                ui = ui,
+                onAllOn = model::allOn,
+                onAllOff = model::allOff,
+                onRoomToggle = model::setRoom,
+                onRoomOpen = { roomId -> navController.navigate("room/$roomId") },
+                onRetry = model::refresh,
+            )
+        }
+
+        composable(
+            route = "room/{roomId}",
+            arguments = listOf(navArgument("roomId") { type = NavType.StringType }),
+        ) { entry ->
+            val roomId = entry.arguments?.getString("roomId").orEmpty()
+            RoomScreen(
+                ui = ui,
+                roomId = roomId,
+                onLightToggle = model::toggleLight,
+                onLightOpen = { lightId -> navController.navigate("light/$lightId") },
+            )
+        }
+
+        composable(
+            route = "light/{lightId}",
+            arguments = listOf(navArgument("lightId") { type = NavType.StringType }),
+        ) { entry ->
+            val lightId = entry.arguments?.getString("lightId").orEmpty()
+            LightScreen(
+                ui = ui,
+                lightId = lightId,
+                onToggle = { model.toggleLight(lightId) },
+                onPreviewBrightness = { pct -> model.previewBrightness(lightId, pct) },
+                onCommitBrightness = { pct -> model.setBrightness(lightId, pct) },
+            )
+        }
+    }
+}
