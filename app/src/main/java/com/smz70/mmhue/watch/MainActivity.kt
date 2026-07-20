@@ -19,6 +19,8 @@ class MainActivity : ComponentActivity() {
         androidx.lifecycle.ViewModelProvider(this)[HomeViewModel::class.java]
     }
 
+    private val wifi: WifiNetworkManager by lazy { WifiNetworkManager(this) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent { MmhueApp() }
@@ -26,12 +28,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Bring Wi-Fi up before polling: the panel is a LAN host the watch's
+        // Bluetooth internet cannot reach, so without this the first requests
+        // fail until (if ever) Wi-Fi happens to be on.
+        wifi.acquire()
         model.startPolling()
     }
 
     override fun onPause() {
         super.onPause()
         model.stopPolling()
+        wifi.release()
     }
 }
 
