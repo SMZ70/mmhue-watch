@@ -132,7 +132,7 @@ fun LightScreen(
 }
 
 @Composable
-private fun ControlLabel(name: String, value: String) {
+internal fun ControlLabel(name: String, value: String) {
     Text(
         text = "$name · $value",
         style = MaterialTheme.typography.caption1,

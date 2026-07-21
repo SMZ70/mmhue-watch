@@ -151,6 +151,53 @@ class HomeViewModel(
         }
     }
 
+    // --- Room group controls: apply one value to every bulb in the room. ---
+
+    fun setRoomBrightness(roomId: String, pct: Int) = roomFanOut(
+        roomId,
+        mutate = { it.copy(brightness = Brightness.clamp(pct)) },
+        call = { client.setBrightness(it, pct) },
+    )
+
+    fun setRoomWarmth(roomId: String, mirek: Int) = roomFanOut(
+        roomId,
+        mutate = { it.copy(colorTemp = ColorTemp.clamp(mirek), hue = null) },
+        call = { client.setColorTemp(it, mirek) },
+    )
+
+    fun setRoomHue(roomId: String, hue: Float) = roomFanOut(
+        roomId,
+        mutate = { it.copy(hue = Hue.wrap(hue), saturation = Hue.SATURATION, colorTemp = null) },
+        call = { client.setColor(it, hue, Hue.SATURATION) },
+    )
+
+    /**
+     * Apply an edit to every bulb in a room, optimistically and on the network.
+     * The bridge has no room-level brightness or colour, so this fans out one
+     * call per bulb; a handful of bulbs stays within its command rate.
+     */
+    private fun roomFanOut(
+        roomId: String,
+        mutate: (Light) -> Light,
+        call: suspend (lightId: String) -> Unit,
+    ) {
+        val snapshot = _ui.value.home
+        val ids = snapshot?.lightsIn(roomId)?.map { it.id } ?: emptyList()
+        if (snapshot != null) {
+            _ui.update { it.copy(home = snapshot.withRoomLights(roomId, forceOn = true, edit = mutate), error = null) }
+        }
+        viewModelScope.launch {
+            try {
+                ids.forEach { call(it) }
+                fetch()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _ui.update { it.copy(home = snapshot, error = e.friendlyMessage()) }
+            }
+        }
+    }
+
     private fun optimistic(mutate: (HomeState) -> HomeState, call: suspend () -> Unit) {
         val snapshot = _ui.value.home
         if (snapshot != null) {

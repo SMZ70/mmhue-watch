@@ -42,6 +42,48 @@ data class HomeState(
             onCount = newLights.count { it.on },
         )
     }
+
+    /** Apply [edit] to every light in a room (optionally forcing them on) and
+     *  recompute counts. Used for the room-level group controls. */
+    fun withRoomLights(roomId: String, forceOn: Boolean, edit: (Light) -> Light): HomeState {
+        val newLights = lights.map {
+            if (it.roomId == roomId) edit(it).let { e -> if (forceOn) e.copy(on = true) else e } else it
+        }
+        return copy(
+            lights = newLights,
+            rooms = rooms.map { room ->
+                if (room.id == roomId) room.copy(onCount = newLights.count { it.roomId == room.id && it.on })
+                else room
+            },
+            onCount = newLights.count { it.on },
+        )
+    }
+}
+
+/**
+ * A room presented as if it were one light: aggregate values for the group
+ * sliders. A three-bulb kitchen reads as a single brightness/warmth/colour, and
+ * setting it fans the value out to each bulb.
+ */
+class RoomAggregate(val lights: List<Light>) {
+    val anyOn: Boolean get() = lights.any { it.on }
+    val supportsColorTemp: Boolean get() = lights.any { it.supportsColorTemp }
+    val supportsColor: Boolean get() = lights.any { it.supportsColor }
+
+    /** Average brightness of the bulbs that are on, or of all if none are. */
+    val brightness: Int
+        get() {
+            val lit = lights.filter { it.on }.ifEmpty { lights }
+            if (lit.isEmpty()) return Brightness.MIN
+            return (lit.sumOf { it.brightness } / lit.size).coerceIn(Brightness.MIN, Brightness.MAX)
+        }
+
+    val colorTemp: Int?
+        get() = lights.mapNotNull { it.colorTemp }.ifEmpty { null }?.average()?.toInt()
+
+    /** Hue of the first colour-capable bulb; averaging hues around the wheel is
+     *  meaningless, so pick a representative rather than blend. */
+    val hue: Float? get() = lights.firstOrNull { it.hue != null }?.hue
 }
 
 @Serializable

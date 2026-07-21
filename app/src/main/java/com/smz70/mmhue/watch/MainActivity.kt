@@ -70,6 +70,10 @@ fun MmhueApp(model: HomeViewModel = viewModel()) {
             RoomScreen(
                 ui = ui,
                 roomId = roomId,
+                onRoomToggle = { on -> model.setRoom(roomId, on) },
+                onRoomBrightness = { pct -> model.setRoomBrightness(roomId, pct) },
+                onRoomWarmth = { mirek -> model.setRoomWarmth(roomId, mirek) },
+                onRoomHue = { hue -> model.setRoomHue(roomId, hue.toFloat()) },
                 onLightToggle = model::toggleLight,
                 onLightOpen = { lightId -> navController.navigate("light/$lightId") },
             )
