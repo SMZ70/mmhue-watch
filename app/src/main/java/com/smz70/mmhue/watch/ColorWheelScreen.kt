@@ -27,6 +27,9 @@ import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
 
+// Width of the always-pass-through back gesture strip on the left edge.
+private const val BACK_GUTTER_DP = 56
+
 /**
  * A proper colour picker: an HSV wheel you tap or drag. Angle is hue, distance
  * from the centre is saturation, so the middle is white and the rim is vivid --
@@ -70,17 +73,19 @@ fun ColorWheelScreen(
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(24.dp)
+                    .padding(22.dp)
                     .pointerInput(Unit) {
                         val centre = Offset(size.width / 2f, size.height / 2f)
                         val radius = minOf(size.width, size.height) / 2f
-                        // Only claim touches that start inside the wheel. Anything
-                        // outside -- the margin ring at the screen edges -- is left
-                        // unconsumed so the swipe-from-edge back gesture still works.
+                        // A generous left-edge strip is always left unconsumed so
+                        // the swipe-from-edge back gesture is reliable; the circle
+                        // touches that edge at its middle, so padding alone was not
+                        // enough. Touches outside the wheel pass through too.
+                        val backGutter = BACK_GUTTER_DP.dp.toPx()
                         awaitEachGesture {
                             val down = awaitFirstDown(requireUnconsumed = false)
-                            val d0 = hypot(down.position.x - centre.x, down.position.y - centre.y)
-                            if (d0 > radius) return@awaitEachGesture
+                            val inside = hypot(down.position.x - centre.x, down.position.y - centre.y) <= radius
+                            if (down.position.x < backGutter || !inside) return@awaitEachGesture
                             pick(down.position, radius, centre)
                             down.consume()
                             while (true) {
