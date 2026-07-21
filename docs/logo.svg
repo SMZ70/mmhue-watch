@@ -1,21 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="hue3" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#FFC15A"/><stop offset=".55" stop-color="#FF6F91"/><stop offset="1" stop-color="#7C5CFF"/>
     </linearGradient>
+    <radialGradient id="face" cx=".5" cy=".42" r=".62">
+      <stop offset="0" stop-color="#3A2B4A"/><stop offset="1" stop-color="#0E0E13"/>
+    </radialGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="#14141A"/>
   <rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="#2A2A34" stroke-width="4"/>
-  <!-- straps hugging the round body (Pixel Watch style: narrow, tucked under) -->
-  <path d="M214 150 q42 -22 84 0 l-6 34 q-36 -14 -72 0 Z" fill="#3A3A46"/>
-  <path d="M214 362 q42 22 84 0 l-6 -34 q-36 14 -72 0 Z" fill="#3A3A46"/>
+
+  <!-- bands: width 108 ~= 0.46 x case diameter (Pixel Watch 4: ~20mm band on 41mm case) -->
+  <rect x="202" y="92" width="108" height="86" rx="16" fill="#42424E"/>
+  <rect x="202" y="334" width="108" height="86" rx="16" fill="#42424E"/>
+  <rect x="202" y="92" width="108" height="16" rx="8" fill="#4E4E5B"/>
+  <rect x="202" y="404" width="108" height="16" rx="8" fill="#4E4E5B"/>
+
   <!-- round domed watch body -->
-  <circle cx="256" cy="256" r="118" fill="#0E0E13" stroke="url(#hue3)" stroke-width="12"/>
-  <!-- subtle inner dome ring -->
-  <circle cx="256" cy="256" r="100" fill="none" stroke="#2A2A34" stroke-width="3"/>
-  <!-- side crown at ~2 o'clock -->
-  <rect x="366" y="212" width="22" height="30" rx="9" fill="url(#hue3)" transform="rotate(32 377 227)"/>
-  <!-- bulb glyph on the face -->
-  <path d="M256 196 a54 54 0 0 1 34 96 c-8 6 -10 12 -12 19 h-44 c-2 -7 -4 -13 -12 -19 a54 54 0 0 1 34 -96 Z" fill="url(#hue3)"/>
-  <rect x="235" y="318" width="42" height="11" rx="5" fill="#EDEDF2"/>
+  <circle cx="256" cy="256" r="116" fill="#0E0E13"/>
+  <circle cx="256" cy="256" r="116" fill="none" stroke="url(#g)" stroke-width="11"/>
+  <circle cx="256" cy="256" r="104" fill="url(#face)"/>
+
+  <!-- crown only (grey button removed) -->
+  <rect x="368" y="240" width="18" height="30" rx="9" fill="url(#g)"/>
+
+  <!-- bulb glyph -->
+  <path d="M256 206 a42 42 0 0 1 25 76 c-6 5 -8 9 -9 15 h-32 c-1 -6 -3 -10 -9 -15 a42 42 0 0 1 25 -76 Z" fill="url(#g)"/>
+  <rect x="242" y="300" width="28" height="9" rx="4" fill="#EDEDF2"/>
+  <rect x="247" y="312" width="18" height="8" rx="4" fill="#C9C9D2"/>
 </svg>
