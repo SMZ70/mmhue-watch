@@ -88,7 +88,7 @@ fun MmhueApp(model: HomeViewModel = viewModel()) {
                 onRoomToggle = { on -> model.setRoom(roomId, on) },
                 onRoomBrightness = { pct -> model.setRoomBrightness(roomId, pct) },
                 onRoomWarmth = { mirek -> model.setRoomWarmth(roomId, mirek) },
-                onRoomHue = { hue -> model.setRoomHue(roomId, hue.toFloat()) },
+                onOpenColor = { navController.navigate("roomcolor/$roomId") },
                 onLightToggle = model::toggleLight,
                 onLightOpen = { lightId -> navController.navigate("light/$lightId") },
             )
@@ -105,7 +105,33 @@ fun MmhueApp(model: HomeViewModel = viewModel()) {
                 onToggle = { model.toggleLight(lightId) },
                 onBrightness = { pct -> model.setBrightness(lightId, pct) },
                 onWarmth = { mirek -> model.setColorTemp(lightId, mirek) },
-                onHue = { hue -> model.setColor(lightId, hue.toFloat(), Hue.SATURATION) },
+                onOpenColor = { navController.navigate("color/$lightId") },
+            )
+        }
+
+        composable(
+            route = "color/{lightId}",
+            arguments = listOf(navArgument("lightId") { type = NavType.StringType }),
+        ) { entry ->
+            val lightId = entry.arguments?.getString("lightId").orEmpty()
+            val light = ui.home?.light(lightId)
+            ColorWheelScreen(
+                initialHue = light?.hue ?: 0f,
+                initialSat = light?.saturation ?: 1f,
+                onPick = { hue, sat -> model.setColor(lightId, hue, sat) },
+            )
+        }
+
+        composable(
+            route = "roomcolor/{roomId}",
+            arguments = listOf(navArgument("roomId") { type = NavType.StringType }),
+        ) { entry ->
+            val roomId = entry.arguments?.getString("roomId").orEmpty()
+            val group = ui.home?.let { RoomAggregate(it.lightsIn(roomId)) }
+            ColorWheelScreen(
+                initialHue = group?.hue ?: 0f,
+                initialSat = group?.lights?.firstOrNull { it.saturation != null }?.saturation ?: 1f,
+                onPick = { hue, sat -> model.setRoomColor(roomId, hue, sat) },
             )
         }
     }

@@ -19,9 +19,6 @@ import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.InlineSlider
-import androidx.wear.compose.material.InlineSliderDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.SplitToggleChip
@@ -144,7 +141,7 @@ fun RoomScreen(
     onRoomToggle: (Boolean) -> Unit,
     onRoomBrightness: (Int) -> Unit,
     onRoomWarmth: (Int) -> Unit,
-    onRoomHue: (Int) -> Unit,
+    onOpenColor: () -> Unit,
     onLightToggle: (String) -> Unit,
     onLightOpen: (String) -> Unit,
 ) {
@@ -190,46 +187,41 @@ fun RoomScreen(
                 )
             }
 
-            // Group sliders: one value, fanned out to every bulb in the room.
-            item { ControlLabel("Brightness", if (group.anyOn) "${group.brightness}%" else "off") }
+            // Group controls: one value, fanned out to every bulb in the room.
             item {
-                InlineSlider(
+                SmoothControl(
+                    title = "Brightness",
                     value = group.brightness,
-                    onValueChange = onRoomBrightness,
-                    valueProgression = Brightness.MIN..Brightness.MAX step Brightness.STEP,
-                    decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "dimmer") },
-                    increaseIcon = { Icon(InlineSliderDefaults.Increase, "brighter") },
-                    segmented = false,
-                    modifier = Modifier.fillMaxWidth(),
+                    range = Brightness.MIN..Brightness.MAX step Brightness.STEP,
+                    format = { "$it%" },
+                    decreaseDesc = "dimmer",
+                    increaseDesc = "brighter",
+                    onCommit = onRoomBrightness,
                 )
             }
 
             if (group.supportsColorTemp) {
-                item { ControlLabel("Warmth", group.colorTemp?.let { "${ColorTemp.kelvin(it)}K" } ?: "—") }
                 item {
-                    InlineSlider(
-                        value = (group.colorTemp ?: ColorTemp.DEFAULT).coerceIn(ColorTemp.MIN, ColorTemp.MAX),
-                        onValueChange = onRoomWarmth,
-                        valueProgression = ColorTemp.MIN..ColorTemp.MAX step ColorTemp.STEP,
-                        decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "cooler") },
-                        increaseIcon = { Icon(InlineSliderDefaults.Increase, "warmer") },
-                        segmented = false,
-                        modifier = Modifier.fillMaxWidth(),
+                    SmoothControl(
+                        title = "Warmth",
+                        value = (group.colorTemp ?: ColorTemp.DEFAULT),
+                        range = ColorTemp.MIN..ColorTemp.MAX step ColorTemp.STEP,
+                        format = { "${ColorTemp.kelvin(it)}K" },
+                        decreaseDesc = "cooler",
+                        increaseDesc = "warmer",
+                        onCommit = onRoomWarmth,
                     )
                 }
             }
 
             if (group.supportsColor) {
-                item { ControlLabel("Colour", group.hue?.let { Hue.name(it) } ?: "—") }
                 item {
-                    InlineSlider(
-                        value = (group.hue?.toInt() ?: 0).coerceIn(0, 350),
-                        onValueChange = onRoomHue,
-                        valueProgression = 0..350 step 10,
-                        decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "hue down") },
-                        increaseIcon = { Icon(InlineSliderDefaults.Increase, "hue up") },
-                        segmented = false,
-                        modifier = Modifier.fillMaxWidth(),
+                    Chip(
+                        label = { Text("Colour") },
+                        secondaryLabel = { Text(group.hue?.let { Hue.name(it) } ?: "pick") },
+                        onClick = onOpenColor,
+                        colors = ChipDefaults.secondaryChipColors(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                     )
                 }
             }

@@ -165,10 +165,10 @@ class HomeViewModel(
         call = { client.setColorTemp(it, mirek) },
     )
 
-    fun setRoomHue(roomId: String, hue: Float) = roomFanOut(
+    fun setRoomColor(roomId: String, hue: Float, sat: Float) = roomFanOut(
         roomId,
-        mutate = { it.copy(hue = Hue.wrap(hue), saturation = Hue.SATURATION, colorTemp = null) },
-        call = { client.setColor(it, hue, Hue.SATURATION) },
+        mutate = { it.copy(hue = Hue.wrap(hue), saturation = sat, colorTemp = null) },
+        call = { client.setColor(it, hue, sat) },
     )
 
     /**
@@ -189,7 +189,9 @@ class HomeViewModel(
         viewModelScope.launch {
             try {
                 ids.forEach { call(it) }
-                fetch()
+                // No immediate re-fetch: the bridge often has not applied the
+                // change yet and would return the old value, snapping the UI
+                // back. The periodic poll reconciles a beat later instead.
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -206,7 +208,8 @@ class HomeViewModel(
         viewModelScope.launch {
             try {
                 call()
-                fetch()
+                // Deliberately no re-fetch here; see roomFanOut. The optimistic
+                // value stands until the next poll, so the control stays smooth.
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

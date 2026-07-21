@@ -11,9 +11,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.InlineSlider
-import androidx.wear.compose.material.InlineSliderDefaults
+import androidx.wear.compose.material.Chip
+import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
@@ -39,7 +38,7 @@ fun LightScreen(
     onToggle: () -> Unit,
     onBrightness: (Int) -> Unit,
     onWarmth: (Int) -> Unit,
-    onHue: (Int) -> Unit,
+    onOpenColor: () -> Unit,
 ) {
     val light = ui.home?.light(lightId)
     val listState = rememberScalingLazyListState()
@@ -77,53 +76,42 @@ fun LightScreen(
                 )
             }
 
-            // The sliders below only make sense on a lit bulb; when it is off they
-            // read the last-known values and turning any of them nudges it back on.
+            // The controls below read last-known values when the bulb is off;
+            // adjusting any of them nudges it back on.
             item {
-                ControlLabel("Brightness", if (light.on) "${light.brightness}%" else "off")
-            }
-            item {
-                InlineSlider(
-                    value = light.brightness.coerceIn(Brightness.MIN, Brightness.MAX),
-                    onValueChange = onBrightness,
-                    valueProgression = Brightness.MIN..Brightness.MAX step Brightness.STEP,
-                    decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "dimmer") },
-                    increaseIcon = { Icon(InlineSliderDefaults.Increase, "brighter") },
-                    segmented = false,
-                    modifier = Modifier.fillMaxWidth(),
+                SmoothControl(
+                    title = "Brightness",
+                    value = light.brightness,
+                    range = Brightness.MIN..Brightness.MAX step Brightness.STEP,
+                    format = { "$it%" },
+                    decreaseDesc = "dimmer",
+                    increaseDesc = "brighter",
+                    onCommit = onBrightness,
                 )
             }
 
             if (light.supportsColorTemp) {
                 item {
-                    ControlLabel("Warmth", light.colorTemp?.let { "${ColorTemp.kelvin(it)}K" } ?: "—")
-                }
-                item {
-                    InlineSlider(
-                        value = (light.colorTemp ?: ColorTemp.DEFAULT).coerceIn(ColorTemp.MIN, ColorTemp.MAX),
-                        onValueChange = onWarmth,
-                        valueProgression = ColorTemp.MIN..ColorTemp.MAX step ColorTemp.STEP,
-                        decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "cooler") },
-                        increaseIcon = { Icon(InlineSliderDefaults.Increase, "warmer") },
-                        segmented = false,
-                        modifier = Modifier.fillMaxWidth(),
+                    SmoothControl(
+                        title = "Warmth",
+                        value = (light.colorTemp ?: ColorTemp.DEFAULT),
+                        range = ColorTemp.MIN..ColorTemp.MAX step ColorTemp.STEP,
+                        format = { "${ColorTemp.kelvin(it)}K" },
+                        decreaseDesc = "cooler",
+                        increaseDesc = "warmer",
+                        onCommit = onWarmth,
                     )
                 }
             }
 
             if (light.supportsColor) {
                 item {
-                    ControlLabel("Colour", light.hue?.let { Hue.name(it) } ?: "—")
-                }
-                item {
-                    InlineSlider(
-                        value = (light.hue?.toInt() ?: 0).coerceIn(0, HUE_MAX),
-                        onValueChange = onHue,
-                        valueProgression = 0..HUE_MAX step 10,
-                        decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "hue down") },
-                        increaseIcon = { Icon(InlineSliderDefaults.Increase, "hue up") },
-                        segmented = false,
-                        modifier = Modifier.fillMaxWidth(),
+                    Chip(
+                        label = { Text("Colour") },
+                        secondaryLabel = { Text(light.hue?.let { Hue.name(it) } ?: "pick") },
+                        onClick = onOpenColor,
+                        colors = ChipDefaults.secondaryChipColors(),
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                     )
                 }
             }
@@ -141,6 +129,3 @@ internal fun ControlLabel(name: String, value: String) {
         modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp),
     )
 }
-
-// Hue slider stops one step short of 360 because 0 and 360 are the same red.
-private const val HUE_MAX = 350
