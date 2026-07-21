@@ -1,7 +1,17 @@
 # mmhue-watch
 
-A Wear OS app for [mmhue](https://github.com/SMZ70/mmhue). On/off and brightness
-for the lights, on your wrist.
+A Wear OS app for [mmhue](https://github.com/SMZ70/mmhue) — control your Philips
+Hue lights from your wrist.
+
+Part of a small Hue trio:
+
+- **[mmhue](https://github.com/SMZ70/mmhue)** — the controller: Telegram + web
+  interfaces, scriptable light dances.
+- **[mirrorball](https://github.com/SMZ70/mirrorball)** — a 50fps light
+  sequencer over the Hue Entertainment API.
+- **mmhue-watch** (this repo) — the Wear OS client for mmhue's panel API.
+
+On/off, brightness and warmth for the lights, on your wrist.
 
 It is deliberately not the web panel. Colour, scenes and dances are not here:
 on a 1.4" screen they cost more than they return, and the panel already does
