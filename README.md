@@ -13,6 +13,29 @@ Part of a small Hue trio:
 
 On/off, brightness and warmth for the lights, on your wrist.
 
+<p align="center">
+  <img src="docs/home.png" width="200" alt="Home: all on/off and rooms">
+  <img src="docs/room-group.png" width="200" alt="A room as one light">
+  <img src="docs/light-panel.png" width="200" alt="Light control panel">
+  <img src="docs/colour-wheel.png" width="200" alt="HSV colour wheel">
+</p>
+
+## Highlights
+
+- **Rooms as one light** — a multi-bulb room (say a three-bulb kitchen) reads and
+  controls as a single light, with an expander down to the individual bulbs.
+- **In-place control panel** — power, brightness and warmth as sliders you adjust
+  on the light's screen; no digging through sub-menus.
+- **HSV colour wheel** — tap or drag; angle is hue, distance from centre is
+  saturation, so pastels are one touch away.
+- **Touch-first** — the rotating crown is an optional accelerator, never required.
+- **Works off Wi-Fi's back** — the app asks the OS to bring Wi-Fi up while it's
+  open, because the panel lives on the LAN and the watch would otherwise drop it.
+- **Not tied to one home** — set your mmhue address in Settings.
+
+Grab the APK from [Releases](https://github.com/SMZ70/mmhue-watch/releases) or
+build it yourself below.
+
 It is deliberately not the web panel. Colour, scenes and dances are not here:
 on a 1.4" screen they cost more than they return, and the panel already does
 them well. This is for "turn the kitchen off" without finding your phone.
