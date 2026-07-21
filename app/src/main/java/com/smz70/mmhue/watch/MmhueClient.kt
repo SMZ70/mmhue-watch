@@ -17,9 +17,12 @@ import java.util.concurrent.TimeUnit
  * that fails fast and lets the UI roll back an optimistic toggle.
  */
 class MmhueClient(
-    private val baseUrl: String = BuildConfig.MMHUE_BASE_URL,
+    private val baseUrlProvider: () -> String = { AppConfig.baseUrl },
     private val http: OkHttpClient = defaultHttpClient(),
 ) {
+    /** Fixed-URL constructor, used by tests against a mock server. */
+    constructor(baseUrl: String) : this(baseUrlProvider = { baseUrl })
+
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun state(): HomeState = withContext(Dispatchers.IO) {
@@ -54,13 +57,13 @@ class MmhueClient(
     private fun Boolean.onOff() = if (this) "on" else "off"
 
     private suspend fun get(path: String): String = withContext(Dispatchers.IO) {
-        execute(Request.Builder().url(baseUrl + path).get().build())
+        execute(Request.Builder().url(baseUrlProvider() + path).get().build())
     }
 
     private suspend fun post(path: String): Unit = withContext(Dispatchers.IO) {
         execute(
             Request.Builder()
-                .url(baseUrl + path)
+                .url(baseUrlProvider() + path)
                 .post(ByteArray(0).toRequestBody(null))
                 .build()
         )

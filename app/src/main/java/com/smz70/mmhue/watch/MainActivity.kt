@@ -23,6 +23,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Load the saved mmhue address before anything makes a request.
+        AppConfig.load(this)
         setContent { MmhueApp() }
     }
 
@@ -46,6 +48,7 @@ class MainActivity : ComponentActivity() {
 fun MmhueApp(model: HomeViewModel = viewModel()) {
     val navController = rememberSwipeDismissableNavController()
     val ui by model.ui.collectAsStateWithLifecycle()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     SwipeDismissableNavHost(
         navController = navController,
@@ -58,7 +61,19 @@ fun MmhueApp(model: HomeViewModel = viewModel()) {
                 onAllOff = model::allOff,
                 onRoomToggle = model::setRoom,
                 onRoomOpen = { roomId -> navController.navigate("room/$roomId") },
+                onOpenSettings = { navController.navigate("settings") },
                 onRetry = model::refresh,
+            )
+        }
+
+        composable("settings") {
+            SettingsScreen(
+                currentUrl = AppConfig.baseUrl,
+                onSave = { url ->
+                    AppConfig.setBaseUrl(context, url)
+                    model.refresh()
+                    navController.popBackStack()
+                },
             )
         }
 

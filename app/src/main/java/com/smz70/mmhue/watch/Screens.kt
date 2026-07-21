@@ -44,6 +44,7 @@ fun HomeScreen(
     onAllOff: () -> Unit,
     onRoomToggle: (String, Boolean) -> Unit,
     onRoomOpen: (String) -> Unit,
+    onOpenSettings: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val listState = rememberScalingLazyListState()
@@ -116,6 +117,15 @@ fun HomeScreen(
 
             if (ui.error != null) {
                 item { ErrorLine(ui.error) }
+            }
+
+            item {
+                Chip(
+                    label = { Text("Settings") },
+                    onClick = onOpenSettings,
+                    colors = ChipDefaults.secondaryChipColors(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                )
             }
         }
     }
