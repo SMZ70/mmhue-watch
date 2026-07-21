@@ -1,4 +1,8 @@
-# mmhue-watch
+<p align="center">
+  <img src="docs/logo.svg" width="120" alt="mmhue-watch logo">
+</p>
+
+<h1 align="center">mmhue-watch</h1>
 
 A Wear OS app for [mmhue](https://github.com/SMZ70/mmhue) — control your Philips
 Hue lights from your wrist.
