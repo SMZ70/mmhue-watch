@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Scaffold
+import androidx.wear.compose.material.TimeText
 
 /**
  * White colour-temperature ("warmth") for one light, on the crown.
@@ -44,7 +45,7 @@ fun WarmthScreen(
         }
     }
 
-    Scaffold {
+    Scaffold(timeText = { TimeText() }) {
         if (light == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()

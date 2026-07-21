@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
+import androidx.wear.compose.material.TimeText
 
 /**
  * Brightness for one light, on the crown -- the same dial as warmth and colour.
@@ -41,7 +42,7 @@ fun BrightnessScreen(
         }
     }
 
-    Scaffold {
+    Scaffold(timeText = { TimeText() }) {
         if (light == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()

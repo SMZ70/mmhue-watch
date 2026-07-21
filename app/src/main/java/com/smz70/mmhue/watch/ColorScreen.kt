@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Scaffold
+import androidx.wear.compose.material.TimeText
 
 /**
  * Hue picker for one light, on the crown.
@@ -44,7 +45,7 @@ fun ColorScreen(
         }
     }
 
-    Scaffold {
+    Scaffold(timeText = { TimeText() }) {
         if (light == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()

@@ -19,6 +19,7 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.SplitToggleChip
 import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 
@@ -37,7 +38,11 @@ fun HomeScreen(
 ) {
     val listState = rememberScalingLazyListState()
 
-    Scaffold(vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) }) {
+    Scaffold(
+        timeText = { TimeText() },
+        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
+        positionIndicator = { androidx.wear.compose.material.PositionIndicator(scalingLazyListState = listState) },
+    ) {
         val home = ui.home
         if (home == null) {
             LoadingOrError(ui = ui, onRetry = onRetry)
@@ -116,8 +121,13 @@ fun RoomScreen(
 ) {
     val home = ui.home
     val room = home?.room(roomId)
+    val listState = rememberScalingLazyListState()
 
-    Scaffold(vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) }) {
+    Scaffold(
+        timeText = { TimeText() },
+        vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
+        positionIndicator = { androidx.wear.compose.material.PositionIndicator(scalingLazyListState = listState) },
+    ) {
         if (home == null || room == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -125,7 +135,7 @@ fun RoomScreen(
             return@Scaffold
         }
 
-        ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(modifier = Modifier.fillMaxSize(), state = listState) {
             item {
                 Text(
                     text = room.name,
