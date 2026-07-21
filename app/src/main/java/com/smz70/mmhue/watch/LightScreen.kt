@@ -11,9 +11,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.wear.compose.material.Chip
-import androidx.wear.compose.material.ChipDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.Icon
+import androidx.wear.compose.material.InlineSlider
+import androidx.wear.compose.material.InlineSliderDefaults
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
@@ -23,23 +23,23 @@ import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.material.ToggleChipDefaults
 
 /**
- * One light, as a short menu: on/off, then brightness, warmth and colour, each
- * opening its own crown dial.
+ * One light, as a control panel: power, then brightness, warmth and colour as
+ * in-place sliders you adjust without leaving the screen.
  *
- * This used to be a single brightness ring with the other controls crammed on
- * top. Two things were wrong with that: the buttons fought the rotary handler
- * for focus so the crown did nothing, and four controls stacked in a circle was
- * cramped. A plain scrollable list fixes both -- the crown scrolls the list, and
- * each control gets a full screen to itself.
+ * Earlier versions buried each control behind its own full-screen dial, so
+ * changing brightness was four taps deep. Wear's InlineSlider puts the minus/plus
+ * right on the row, so the common actions -- dim a light, warm it up -- happen
+ * where you land. The crown scrolls this list; the sliders are touch, so nothing
+ * depends on the crown working.
  */
 @Composable
 fun LightScreen(
     ui: UiState,
     lightId: String,
     onToggle: () -> Unit,
-    onOpenBrightness: () -> Unit,
-    onOpenWarmth: () -> Unit,
-    onOpenColor: () -> Unit,
+    onBrightness: (Int) -> Unit,
+    onWarmth: (Int) -> Unit,
+    onHue: (Int) -> Unit,
 ) {
     val light = ui.home?.light(lightId)
     val listState = rememberScalingLazyListState()
@@ -50,7 +50,7 @@ fun LightScreen(
     ) {
         if (light == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                Text("…")
             }
             return@Scaffold
         }
@@ -62,7 +62,7 @@ fun LightScreen(
                     style = MaterialTheme.typography.title3,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                    modifier = Modifier.padding(top = 6.dp, bottom = 2.dp),
                 )
             }
 
@@ -77,24 +77,35 @@ fun LightScreen(
                 )
             }
 
+            // The sliders below only make sense on a lit bulb; when it is off they
+            // read the last-known values and turning any of them nudges it back on.
             item {
-                Chip(
-                    label = { Text("Brightness") },
-                    secondaryLabel = { Text(if (light.on) "${light.brightness}%" else "Off") },
-                    onClick = onOpenBrightness,
-                    colors = ChipDefaults.secondaryChipColors(),
+                ControlLabel("Brightness", if (light.on) "${light.brightness}%" else "off")
+            }
+            item {
+                InlineSlider(
+                    value = light.brightness.coerceIn(Brightness.MIN, Brightness.MAX),
+                    onValueChange = onBrightness,
+                    valueProgression = Brightness.MIN..Brightness.MAX step Brightness.STEP,
+                    decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "dimmer") },
+                    increaseIcon = { Icon(InlineSliderDefaults.Increase, "brighter") },
+                    segmented = false,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
 
-            // Warmth before Colour: shades of white are the common need.
             if (light.supportsColorTemp) {
                 item {
-                    Chip(
-                        label = { Text("Warmth") },
-                        secondaryLabel = light.colorTemp?.let { { Text("${ColorTemp.kelvin(it)}K") } },
-                        onClick = onOpenWarmth,
-                        colors = ChipDefaults.secondaryChipColors(),
+                    ControlLabel("Warmth", light.colorTemp?.let { "${ColorTemp.kelvin(it)}K" } ?: "—")
+                }
+                item {
+                    InlineSlider(
+                        value = (light.colorTemp ?: ColorTemp.DEFAULT).coerceIn(ColorTemp.MIN, ColorTemp.MAX),
+                        onValueChange = onWarmth,
+                        valueProgression = ColorTemp.MIN..ColorTemp.MAX step ColorTemp.STEP,
+                        decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "cooler") },
+                        increaseIcon = { Icon(InlineSliderDefaults.Increase, "warmer") },
+                        segmented = false,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -102,11 +113,16 @@ fun LightScreen(
 
             if (light.supportsColor) {
                 item {
-                    Chip(
-                        label = { Text("Colour") },
-                        secondaryLabel = light.hue?.let { { Text(Hue.name(it)) } },
-                        onClick = onOpenColor,
-                        colors = ChipDefaults.secondaryChipColors(),
+                    ControlLabel("Colour", light.hue?.let { Hue.name(it) } ?: "—")
+                }
+                item {
+                    InlineSlider(
+                        value = (light.hue?.toInt() ?: 0).coerceIn(0, HUE_MAX),
+                        onValueChange = onHue,
+                        valueProgression = 0..HUE_MAX step 10,
+                        decreaseIcon = { Icon(InlineSliderDefaults.Decrease, "hue down") },
+                        increaseIcon = { Icon(InlineSliderDefaults.Increase, "hue up") },
+                        segmented = false,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -114,3 +130,17 @@ fun LightScreen(
         }
     }
 }
+
+@Composable
+private fun ControlLabel(name: String, value: String) {
+    Text(
+        text = "$name · $value",
+        style = MaterialTheme.typography.caption1,
+        color = MaterialTheme.colors.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 2.dp),
+    )
+}
+
+// Hue slider stops one step short of 360 because 0 and 360 are the same red.
+private const val HUE_MAX = 350

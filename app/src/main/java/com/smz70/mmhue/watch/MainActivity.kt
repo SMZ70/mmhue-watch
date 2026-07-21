@@ -84,48 +84,9 @@ fun MmhueApp(model: HomeViewModel = viewModel()) {
                 ui = ui,
                 lightId = lightId,
                 onToggle = { model.toggleLight(lightId) },
-                onOpenBrightness = { navController.navigate("brightness/$lightId") },
-                onOpenWarmth = { navController.navigate("warmth/$lightId") },
-                onOpenColor = { navController.navigate("color/$lightId") },
-            )
-        }
-
-        composable(
-            route = "brightness/{lightId}",
-            arguments = listOf(navArgument("lightId") { type = NavType.StringType }),
-        ) { entry ->
-            val lightId = entry.arguments?.getString("lightId").orEmpty()
-            BrightnessScreen(
-                ui = ui,
-                lightId = lightId,
-                onPreview = { pct -> model.previewBrightness(lightId, pct) },
-                onCommit = { pct -> model.setBrightness(lightId, pct) },
-            )
-        }
-
-        composable(
-            route = "warmth/{lightId}",
-            arguments = listOf(navArgument("lightId") { type = NavType.StringType }),
-        ) { entry ->
-            val lightId = entry.arguments?.getString("lightId").orEmpty()
-            WarmthScreen(
-                ui = ui,
-                lightId = lightId,
-                onPreviewTemp = { mirek -> model.previewColorTemp(lightId, mirek) },
-                onCommitTemp = { mirek -> model.setColorTemp(lightId, mirek) },
-            )
-        }
-
-        composable(
-            route = "color/{lightId}",
-            arguments = listOf(navArgument("lightId") { type = NavType.StringType }),
-        ) { entry ->
-            val lightId = entry.arguments?.getString("lightId").orEmpty()
-            ColorScreen(
-                ui = ui,
-                lightId = lightId,
-                onPreviewHue = { hue -> model.previewHue(lightId, hue) },
-                onCommitHue = { hue -> model.setColor(lightId, hue, Hue.SATURATION) },
+                onBrightness = { pct -> model.setBrightness(lightId, pct) },
+                onWarmth = { mirek -> model.setColorTemp(lightId, mirek) },
+                onHue = { hue -> model.setColor(lightId, hue.toFloat(), Hue.SATURATION) },
             )
         }
     }
