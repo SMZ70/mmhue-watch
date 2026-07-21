@@ -84,10 +84,22 @@ fun MmhueApp(model: HomeViewModel = viewModel()) {
                 ui = ui,
                 lightId = lightId,
                 onToggle = { model.toggleLight(lightId) },
-                onPreviewBrightness = { pct -> model.previewBrightness(lightId, pct) },
-                onCommitBrightness = { pct -> model.setBrightness(lightId, pct) },
+                onOpenBrightness = { navController.navigate("brightness/$lightId") },
                 onOpenWarmth = { navController.navigate("warmth/$lightId") },
                 onOpenColor = { navController.navigate("color/$lightId") },
+            )
+        }
+
+        composable(
+            route = "brightness/{lightId}",
+            arguments = listOf(navArgument("lightId") { type = NavType.StringType }),
+        ) { entry ->
+            val lightId = entry.arguments?.getString("lightId").orEmpty()
+            BrightnessScreen(
+                ui = ui,
+                lightId = lightId,
+                onPreview = { pct -> model.previewBrightness(lightId, pct) },
+                onCommit = { pct -> model.setBrightness(lightId, pct) },
             )
         }
 

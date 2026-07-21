@@ -7,18 +7,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.ExperimentalWearFoundationApi
+import androidx.wear.compose.foundation.rememberActiveFocusRequester
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
@@ -35,7 +35,7 @@ import androidx.wear.compose.material.Text
  * however many steps the turn covered); the caller clamps and applies. Rotary
  * events arrive in bursts, so callers debounce the network write themselves.
  */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalWearFoundationApi::class)
 @Composable
 fun CrownDial(
     centerText: String,
@@ -45,10 +45,11 @@ fun CrownDial(
     onStep: (Int) -> Unit,
     bottom: @Composable (() -> Unit)? = null,
 ) {
-    val focusRequester = remember { FocusRequester() }
+    // Wear-specific: ties rotary focus to this screen being the active one. A
+    // plain FocusRequester + requestFocus() on first frame silently fails to
+    // grab the crown, which reads on-device as "the crown does nothing".
+    val focusRequester = rememberActiveFocusRequester()
     val accumulator = remember { mutableFloatStateOf(0f) }
-
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
     Box(
         modifier = Modifier
