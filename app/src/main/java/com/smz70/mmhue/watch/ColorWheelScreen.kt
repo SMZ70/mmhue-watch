@@ -1,8 +1,8 @@
 package com.smz70.mmhue.watch
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -70,16 +70,27 @@ fun ColorWheelScreen(
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(18.dp)
+                    .padding(24.dp)
                     .pointerInput(Unit) {
                         val centre = Offset(size.width / 2f, size.height / 2f)
                         val radius = minOf(size.width, size.height) / 2f
-                        detectTapGestures { pick(it, radius, centre) }
-                    }
-                    .pointerInput(Unit) {
-                        val centre = Offset(size.width / 2f, size.height / 2f)
-                        val radius = minOf(size.width, size.height) / 2f
-                        detectDragGestures { change, _ -> pick(change.position, radius, centre) }
+                        // Only claim touches that start inside the wheel. Anything
+                        // outside -- the margin ring at the screen edges -- is left
+                        // unconsumed so the swipe-from-edge back gesture still works.
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            val d0 = hypot(down.position.x - centre.x, down.position.y - centre.y)
+                            if (d0 > radius) return@awaitEachGesture
+                            pick(down.position, radius, centre)
+                            down.consume()
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull() ?: break
+                                if (!change.pressed) break
+                                pick(change.position, radius, centre)
+                                change.consume()
+                            }
+                        }
                     },
             ) {
                 val radius = size.minDimension / 2f
